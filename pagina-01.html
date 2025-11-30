@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NESH · Moodboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #ffffff;
+            font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10000;
+            padding: 28px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 6px;
+            color: #1a1a1a;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 48px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #999;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active { color: #1a1a1a; }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #1a1a1a;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas-container:active { cursor: grabbing; }
+
+        #scene-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-style: preserve-3d;
+            perspective: 2500px;
+        }
+
+        .image-tile {
+            position: absolute;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            overflow: hidden;
+        }
+
+        .image-tile:hover { box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12); }
+
+        .image-tile video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #loader.hidden { opacity: 0; visibility: hidden; }
+
+        .loader-text {
+            font-size: 42px;
+            font-weight: 600;
+            letter-spacing: 14px;
+            color: #1a1a1a;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        .loader-sub {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #999;
+            letter-spacing: 2px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        #zoom-indicator {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: #fafafa;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: #666;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #zoom-indicator.visible { opacity: 1; }
+
+        #instructions {
+            position: fixed;
+            bottom: 32px;
+            left: 32px;
+            font-size: 11px;
+            color: #ccc;
+            letter-spacing: 0.5px;
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+        }
+
+        .page-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .page-dot.active {
+            background: #1a1a1a;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        #file-count {
+            position: fixed;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #bbb;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 20px 24px; }
+            .nav-links { gap: 24px; }
+            .nav-links a { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="loader-text">NESH</div>
+        <div class="loader-sub">Carregando mídia...</div>
+    </div>
+
+    <nav>
+        <div class="logo">NESH</div>
+        <div class="nav-links">
+            <a href="pagina-01.html" class="active">Moodboard</a>
+            <a href="pagina-02.html">Galeria</a>
+        </div>
+    </nav>
+
+    <div id="file-count"></div>
+
+    <div id="canvas-container">
+        <div id="scene-container"></div>
+    </div>
+
+    <div id="zoom-indicator">100%</div>
+    <div id="instructions">Scroll → Zoom · Arraste → Mover · 0 → Reset</div>
+    
+    <div class="page-indicator">
+        <div class="page-dot active"></div>
+        <div class="page-dot"></div>
+    </div>
+
+    <script>
+        /*
+         * ================================================
+         * CONFIGURAÇÃO - ADICIONE SEUS ARQUIVOS AQUI
+         * ================================================
+         * 
+         * COMO USAR:
+         * 1. Crie uma pasta chamada "media" no mesmo diretório deste arquivo
+         * 2. Coloque suas imagens e vídeos na pasta "media"
+         * 3. Adicione os nomes dos arquivos na lista abaixo
+         * 
+         * FORMATOS SUPORTADOS:
+         * - Imagens: .png, .jpg, .jpeg, .webp, .gif
+         * - Vídeos: .mp4, .webm, .mov
+         * 
+         * EXEMPLO:
+         * const MEDIA_FILES = [
+         *     'minha-foto.png',
+         *     'produto-01.jpg',
+         *     'video-promo.mp4',
+         * ];
+         */
+
+        const MEDIA_FILES = [
+            // Vídeo Promo
+            'PROMO_NESH__.mp4',
+            // Produto - Cápsulas
+            'freepik__ultra-macro-zoom-framing-a-floating-capsule-being-__9797.png',
+            'freepik__ultra-macro-zoom-framing-a-floating-capsule-being-__9796.png',
+            'freepik__ultra-macro-zoom-in-the-capsule-opening__9800.png',
+            'freepik__angulo-criativo-das-cpsulas-abertas-mostrando-os-c__9841.png',
+            // Produto - Embalagem
+            'freepik__upload__9829.png',
+            'freepik__crie-8-variacoes-de-angulos-de-cmera-para-editoria__9847.png',
+            'freepik__crie-uma-foto-editorial-profissional-de-produto-em__9852.png',
+            'freepik__crie-uma-foto-editorial-profissional-de-produto-em__9854.png',
+            'freepik__me-de-uma-variaao-antes-do-pote-abrir-com-um-angul__9846.png',
+            // Conceito Visual
+            'freepik__text-to-image__9815.png',
+            'freepik__text-to-image__9816.png',
+            'freepik__the-product-image3aa3ffb87c2f4fc59b5322683544ecf2c__9789.png',
+            // Cenas - Campanha
+            'scene_01.png',
+            'scene_02.png',
+            'scene_03.png',
+            'scene_04.png',
+            'scene_05.png',
+            'scene_06.png',
+            'scene_07.png',
+            'scene_08.png',
+            'scene_09.png',
+            'scene_10.png',
+        ];
+
+        // Pasta onde estão as mídias
+        const MEDIA_FOLDER = 'media/';
+
+        // ============================================
+        // CÓDIGO DO MOODBOARD (não precisa alterar)
+        // ============================================
+
+        const config = {
+            minZoom: 0.1,
+            maxZoom: 50,
+            zoomSpeed: 0.002,
+            panSpeed: 1,
+            baseDepth: 1500,
+            tileSize: 160
+        };
+
+        let state = {
+            zoom: 0.65,
+            targetZoom: 0.65,
+            panX: 0,
+            panY: 0,
+            targetPanX: 0,
+            targetPanY: 0,
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            tiles: []
+        };
+
+        const container = document.getElementById('canvas-container');
+        const scene = document.getElementById('scene-container');
+        const loader = document.getElementById('loader');
+        const zoomIndicator = document.getElementById('zoom-indicator');
+        const fileCount = document.getElementById('file-count');
+
+        function getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'];
+            const videoExts = ['mp4', 'webm', 'mov', 'avi'];
+            
+            if (imageExts.includes(ext)) return 'image';
+            if (videoExts.includes(ext)) return 'video';
+            return null;
+        }
+
+        function processMediaFiles() {
+            return MEDIA_FILES
+                .filter(f => f && f.trim() !== '' && !f.startsWith('exemplo'))
+                .map(filename => ({
+                    type: getFileType(filename),
+                    src: MEDIA_FOLDER + filename,
+                    name: filename
+                }))
+                .filter(f => f.type !== null);
+        }
+
+        function generateNeshPositions(count) {
+            const positions = [];
+            const scale = 700;
+            const depthRange = config.baseDepth;
+            
+            // Letra N
+            for (let i = 0; i < 6; i++) {
+                positions.push({ x: 0, y: (i - 2.5) * 0.16, z: (i % 3 - 1) * depthRange * 0.3 });
+            }
+            for (let i = 0; i < 4; i++) {
+                positions.push({ x: i * 0.08, y: (i - 1.5) * 0.16, z: (i % 2) * depthRange * 0.4 });
+            }
+            for (let i = 0; i < 6; i++) {
+                positions.push({ x: 0.28, y: (i - 2.5) * 0.16, z: ((i + 1) % 3 - 1) * depthRange * 0.3 });
+            }
+
+            // Letra E
+            for (let i = 0; i < 6; i++) {
+                positions.push({ x: 0.52, y: (i - 2.5) * 0.16, z: (i % 3 - 1) * depthRange * 0.25 });
+            }
+            for (let i = 0; i < 3; i++) {
+                positions.push({ x: 0.52 + (i + 1) * 0.08, y: -0.4, z: i * depthRange * 0.2 });
+            }
+            for (let i = 0; i < 2; i++) {
+                positions.push({ x: 0.52 + (i + 1) * 0.07, y: 0, z: -i * depthRange * 0.25 });
+            }
+            for (let i = 0; i < 3; i++) {
+                positions.push({ x: 0.52 + (i + 1) * 0.08, y: 0.4, z: -i * depthRange * 0.2 });
+            }
+
+            // Letra S
+            const sPoints = [
+                { x: 0.98, y: -0.4 }, { x: 0.90, y: -0.4 }, { x: 0.84, y: -0.28 },
+                { x: 0.86, y: -0.12 }, { x: 0.92, y: 0 }, { x: 0.98, y: 0.12 },
+                { x: 1.0, y: 0.28 }, { x: 0.94, y: 0.4 }, { x: 0.86, y: 0.4 }
+            ];
+            sPoints.forEach((p, i) => {
+                positions.push({ x: p.x, y: p.y, z: ((i % 3) - 1) * depthRange * 0.25 });
+            });
+
+            // Letra H
+            for (let i = 0; i < 6; i++) {
+                positions.push({ x: 1.2, y: (i - 2.5) * 0.16, z: ((i + 2) % 3 - 1) * depthRange * 0.3 });
+            }
+            for (let i = 0; i < 3; i++) {
+                positions.push({ x: 1.2 + (i + 1) * 0.08, y: 0, z: i * depthRange * 0.2 });
+            }
+            for (let i = 0; i < 6; i++) {
+                positions.push({ x: 1.48, y: (i - 2.5) * 0.16, z: (i % 3 - 1) * depthRange * 0.3 });
+            }
+
+            const centerX = 0.74;
+            return positions.map(p => ({
+                x: (p.x - centerX) * scale,
+                y: p.y * scale,
+                z: p.z
+            }));
+        }
+
+        function createTile(media, position) {
+            const tile = document.createElement('div');
+            tile.className = 'image-tile';
+            
+            const sizeVar = 0.85 + Math.random() * 0.3;
+            const width = config.tileSize * sizeVar;
+            const height = width * (0.7 + Math.random() * 0.3);
+            
+            tile.style.width = `${width}px`;
+            tile.style.height = `${height}px`;
+            
+            if (media.type === 'image') {
+                tile.style.backgroundImage = `url('${media.src}')`;
+            } else if (media.type === 'video') {
+                const video = document.createElement('video');
+                video.src = media.src;
+                video.loop = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.autoplay = true;
+                tile.appendChild(video);
+                video.play().catch(() => {});
+            }
+            
+            state.tiles.push({
+                element: tile,
+                x: position.x,
+                y: position.y,
+                z: position.z,
+                width,
+                height
+            });
+            
+            scene.appendChild(tile);
+        }
+
+        function initScene() {
+            const mediaFiles = processMediaFiles();
+            
+            if (mediaFiles.length === 0) {
+                loader.querySelector('.loader-sub').textContent = 'Adicione arquivos na lista MEDIA_FILES';
+                return;
+            }
+
+            fileCount.textContent = `${mediaFiles.length} arquivo${mediaFiles.length > 1 ? 's' : ''}`;
+
+            const positions = generateNeshPositions(mediaFiles.length);
+            
+            // Coloca cada mídia em uma posição
+            mediaFiles.forEach((media, i) => {
+                const pos = positions[i % positions.length];
+                createTile(media, pos);
+            });
+
+            // Preenche com cópias para formar NESH completo
+            const targetTiles = Math.max(50, positions.length);
+            let index = mediaFiles.length;
+            
+            while (state.tiles.length < targetTiles) {
+                const media = mediaFiles[index % mediaFiles.length];
+                const basePos = positions[index % positions.length];
+                const pos = {
+                    x: basePos.x + (Math.random() - 0.5) * 50,
+                    y: basePos.y + (Math.random() - 0.5) * 50,
+                    z: basePos.z + (Math.random() - 0.5) * config.baseDepth * 0.4
+                };
+                createTile(media, pos);
+                index++;
+            }
+            
+            setTimeout(() => loader.classList.add('hidden'), 500);
+        }
+
+        function updateScene() {
+            const ease = 0.12;
+            state.zoom += (state.targetZoom - state.zoom) * ease;
+            state.panX += (state.targetPanX - state.panX) * ease;
+            state.panY += (state.targetPanY - state.panY) * ease;
+            
+            state.tiles.forEach(tile => {
+                const depthFactor = 1 + (tile.z / config.baseDepth) * 0.4;
+                const x = (tile.x + state.panX) * state.zoom * depthFactor;
+                const y = (tile.y + state.panY) * state.zoom * depthFactor;
+                const z = tile.z * state.zoom * 0.2;
+                const finalScale = state.zoom * (0.6 + depthFactor * 0.4);
+                
+                tile.element.style.transform = `translate3d(${x - tile.width/2}px, ${y - tile.height/2}px, ${z}px) scale(${finalScale})`;
+                tile.element.style.opacity = Math.max(0.3, Math.min(1, 1 - Math.abs(tile.z) / (config.baseDepth * 2)));
+                tile.element.style.zIndex = Math.floor(5000 - tile.z);
+            });
+            
+            requestAnimationFrame(updateScene);
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const delta = -e.deltaY * config.zoomSpeed;
+            const newZoom = Math.max(config.minZoom, Math.min(config.maxZoom, state.targetZoom * (1 + delta)));
+            
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left - rect.width / 2;
+            const mouseY = e.clientY - rect.top - rect.height / 2;
+            const zoomRatio = newZoom / state.targetZoom;
+            
+            state.targetPanX -= mouseX * (1 - 1 / zoomRatio) / state.targetZoom;
+            state.targetPanY -= mouseY * (1 - 1 / zoomRatio) / state.targetZoom;
+            state.targetZoom = newZoom;
+            
+            zoomIndicator.textContent = `${Math.round(state.targetZoom * 100)}%`;
+            zoomIndicator.classList.add('visible');
+            clearTimeout(state.zoomTimeout);
+            state.zoomTimeout = setTimeout(() => zoomIndicator.classList.remove('visible'), 1200);
+        }
+
+        function handleMouseDown(e) {
+            if (e.button !== 0) return;
+            state.isDragging = true;
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+            container.style.cursor = 'grabbing';
+        }
+
+        function handleMouseMove(e) {
+            if (!state.isDragging) return;
+            state.targetPanX += (e.clientX - state.lastMouseX) / state.zoom;
+            state.targetPanY += (e.clientY - state.lastMouseY) / state.zoom;
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+        }
+
+        function handleMouseUp() {
+            state.isDragging = false;
+            container.style.cursor = 'grab';
+        }
+
+        // Touch
+        let lastTouchDist = 0;
+        container.addEventListener('touchstart', e => {
+            if (e.touches.length === 1) {
+                state.isDragging = true;
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (e.touches.length === 1 && state.isDragging) {
+                state.targetPanX += (e.touches[0].clientX - state.lastMouseX) / state.zoom;
+                state.targetPanY += (e.touches[0].clientY - state.lastMouseY) / state.zoom;
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                state.targetZoom = Math.max(config.minZoom, Math.min(config.maxZoom, state.targetZoom * (dist / lastTouchDist)));
+                lastTouchDist = dist;
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', () => { state.isDragging = false; });
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        container.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        document.addEventListener('keydown', e => {
+            if (e.key === '0') { state.targetZoom = 0.65; state.targetPanX = 0; state.targetPanY = 0; }
+            else if (e.key === '+' || e.key === '=') state.targetZoom = Math.min(config.maxZoom, state.targetZoom * 1.25);
+            else if (e.key === '-') state.targetZoom = Math.max(config.minZoom, state.targetZoom * 0.75);
+        });
+
+        initScene();
+        updateScene();
+    </script>
+</body>
+</html>

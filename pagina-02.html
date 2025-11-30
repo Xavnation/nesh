@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NESH · Galeria</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #fafafa;
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10000;
+            padding: 28px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(250, 250, 250, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 6px;
+            color: #1a1a1a;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 48px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #999;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active { color: #1a1a1a; }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #1a1a1a;
+        }
+
+        main {
+            padding: 140px 48px 80px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .page-header h1 {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 16px;
+        }
+
+        .page-header p {
+            font-size: 28px;
+            font-weight: 400;
+            color: #1a1a1a;
+        }
+
+        .file-count {
+            text-align: center;
+            font-size: 12px;
+            color: #bbb;
+            margin-bottom: 48px;
+            letter-spacing: 1px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+            main { padding: 120px 20px 60px; }
+            nav { padding: 20px 24px; }
+            .nav-links { gap: 24px; }
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .gallery-item:nth-child(1) { animation-delay: 0.05s; }
+        .gallery-item:nth-child(2) { animation-delay: 0.1s; }
+        .gallery-item:nth-child(3) { animation-delay: 0.15s; }
+        .gallery-item:nth-child(4) { animation-delay: 0.2s; }
+        .gallery-item:nth-child(5) { animation-delay: 0.25s; }
+        .gallery-item:nth-child(6) { animation-delay: 0.3s; }
+        .gallery-item:nth-child(7) { animation-delay: 0.35s; }
+        .gallery-item:nth-child(8) { animation-delay: 0.4s; }
+        .gallery-item:nth-child(n+9) { animation-delay: 0.45s; }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gallery-item-media {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 4/5;
+        }
+
+        .gallery-item img,
+        .gallery-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .gallery-item:hover img,
+        .gallery-item:hover video { transform: scale(1.04); }
+
+        .gallery-item-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .gallery-item-info {
+            padding: 16px 18px 18px;
+        }
+
+        .gallery-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+            word-break: break-word;
+        }
+
+        .gallery-item-type {
+            font-size: 10px;
+            color: #999;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Lightbox */
+        #lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.35s ease;
+        }
+
+        #lightbox.active { opacity: 1; visibility: visible; }
+
+        #lightbox-content {
+            max-width: 90%;
+            max-height: 85%;
+            border-radius: 8px;
+            overflow: hidden;
+            transform: scale(0.92);
+            transition: transform 0.35s ease;
+        }
+
+        #lightbox.active #lightbox-content { transform: scale(1); }
+
+        #lightbox-content img,
+        #lightbox-content video {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+        }
+
+        .lightbox-btn {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .lightbox-btn:hover { background: rgba(255, 255, 255, 0.15); }
+        .lightbox-btn svg { width: 18px; height: 18px; stroke: #fff; }
+
+        #lightbox-close { top: 24px; right: 24px; }
+        #lightbox-close:hover { transform: rotate(90deg); }
+        #lightbox-prev { left: 24px; top: 50%; transform: translateY(-50%); }
+        #lightbox-next { right: 24px; top: 50%; transform: translateY(-50%); }
+
+        #lightbox-info {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .page-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .page-dot.active {
+            background: #1a1a1a;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        footer {
+            padding: 48px;
+            text-align: center;
+            background: #fff;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            margin-top: 40px;
+        }
+
+        footer p {
+            font-size: 11px;
+            color: #bbb;
+            letter-spacing: 2px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .empty-state code {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">NESH</div>
+        <div class="nav-links">
+            <a href="pagina-01.html">Moodboard</a>
+            <a href="pagina-02.html" class="active">Galeria</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <h1>Galeria</h1>
+            <p>Coleção visual do projeto</p>
+        </div>
+
+        <div class="file-count" id="file-count"></div>
+        <div class="gallery-grid" id="gallery-grid"></div>
+    </main>
+
+    <div id="lightbox">
+        <button class="lightbox-btn" id="lightbox-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <button class="lightbox-btn" id="lightbox-prev">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6"/>
+            </svg>
+        </button>
+        <div id="lightbox-content"></div>
+        <button class="lightbox-btn" id="lightbox-next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6"/>
+            </svg>
+        </button>
+        <div id="lightbox-info"></div>
+    </div>
+
+    <div class="page-indicator">
+        <div class="page-dot"></div>
+        <div class="page-dot active"></div>
+    </div>
+
+    <footer>
+        <p>NESH · Portfolio Visual</p>
+    </footer>
+
+    <script>
+        /*
+         * ================================================
+         * CONFIGURAÇÃO - ADICIONE SEUS ARQUIVOS AQUI
+         * ================================================
+         * 
+         * COMO USAR:
+         * 1. Crie uma pasta chamada "media" no mesmo diretório deste arquivo
+         * 2. Coloque suas imagens e vídeos na pasta "media"
+         * 3. Adicione os nomes dos arquivos na lista abaixo
+         * 
+         * FORMATOS SUPORTADOS:
+         * - Imagens: .png, .jpg, .jpeg, .webp, .gif
+         * - Vídeos: .mp4, .webm, .mov
+         */
+
+        const MEDIA_FILES = [
+            // Vídeo Promo
+            'PROMO_NESH__.mp4',
+            // Produto - Cápsulas
+            'freepik__ultra-macro-zoom-framing-a-floating-capsule-being-__9797.png',
+            'freepik__ultra-macro-zoom-framing-a-floating-capsule-being-__9796.png',
+            'freepik__ultra-macro-zoom-in-the-capsule-opening__9800.png',
+            'freepik__angulo-criativo-das-cpsulas-abertas-mostrando-os-c__9841.png',
+            // Produto - Embalagem
+            'freepik__upload__9829.png',
+            'freepik__crie-8-variacoes-de-angulos-de-cmera-para-editoria__9847.png',
+            'freepik__crie-uma-foto-editorial-profissional-de-produto-em__9852.png',
+            'freepik__crie-uma-foto-editorial-profissional-de-produto-em__9854.png',
+            'freepik__me-de-uma-variaao-antes-do-pote-abrir-com-um-angul__9846.png',
+            // Conceito Visual
+            'freepik__text-to-image__9815.png',
+            'freepik__text-to-image__9816.png',
+            'freepik__the-product-image3aa3ffb87c2f4fc59b5322683544ecf2c__9789.png',
+            // Cenas - Campanha
+            'scene_01.png',
+            'scene_02.png',
+            'scene_03.png',
+            'scene_04.png',
+            'scene_05.png',
+            'scene_06.png',
+            'scene_07.png',
+            'scene_08.png',
+            'scene_09.png',
+            'scene_10.png',
+        ];
+
+        const MEDIA_FOLDER = 'media/';
+
+        // ============================================
+        // CÓDIGO DA GALERIA
+        // ============================================
+
+        const galleryGrid = document.getElementById('gallery-grid');
+        const fileCountEl = document.getElementById('file-count');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxContent = document.getElementById('lightbox-content');
+        const lightboxInfo = document.getElementById('lightbox-info');
+
+        let currentIndex = 0;
+        let mediaList = [];
+
+        function getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'];
+            const videoExts = ['mp4', 'webm', 'mov', 'avi'];
+            
+            if (imageExts.includes(ext)) return 'image';
+            if (videoExts.includes(ext)) return 'video';
+            return null;
+        }
+
+        function getCleanName(filename) {
+            return filename
+                .replace(/\.[^/.]+$/, '')
+                .replace(/[-_]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function processMediaFiles() {
+            return MEDIA_FILES
+                .filter(f => f && f.trim() !== '' && !f.startsWith('exemplo'))
+                .map(filename => ({
+                    type: getFileType(filename),
+                    src: MEDIA_FOLDER + filename,
+                    name: getCleanName(filename),
+                    filename: filename
+                }))
+                .filter(f => f.type !== null);
+        }
+
+        function createGalleryItem(media, index) {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.dataset.index = index;
+
+            const mediaContainer = document.createElement('div');
+            mediaContainer.className = 'gallery-item-media';
+
+            if (media.type === 'image') {
+                const img = document.createElement('img');
+                img.src = media.src;
+                img.alt = media.name;
+                img.loading = 'lazy';
+                mediaContainer.appendChild(img);
+            } else {
+                const video = document.createElement('video');
+                video.src = media.src;
+                video.loop = true;
+                video.muted = true;
+                video.playsInline = true;
+                mediaContainer.appendChild(video);
+
+                const badge = document.createElement('div');
+                badge.className = 'gallery-item-badge';
+                badge.textContent = 'Vídeo';
+                mediaContainer.appendChild(badge);
+
+                item.addEventListener('mouseenter', () => video.play());
+                item.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+            }
+
+            item.appendChild(mediaContainer);
+
+            const info = document.createElement('div');
+            info.className = 'gallery-item-info';
+            info.innerHTML = `
+                <div class="gallery-item-name">${media.name}</div>
+                <div class="gallery-item-type">${media.type === 'image' ? 'Imagem' : 'Vídeo'}</div>
+            `;
+            item.appendChild(info);
+
+            item.addEventListener('click', () => openLightbox(index));
+
+            return item;
+        }
+
+        function initGallery() {
+            mediaList = processMediaFiles();
+
+            if (mediaList.length === 0) {
+                galleryGrid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>Nenhum arquivo encontrado</h3>
+                        <p>
+                            Para adicionar arquivos:<br><br>
+                            1. Crie uma pasta <code>media</code><br>
+                            2. Coloque suas imagens e vídeos nela<br>
+                            3. Adicione os nomes na lista <code>MEDIA_FILES</code> no código
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            fileCountEl.textContent = `${mediaList.length} arquivo${mediaList.length > 1 ? 's' : ''}`;
+
+            mediaList.forEach((media, index) => {
+                galleryGrid.appendChild(createGalleryItem(media, index));
+            });
+        }
+
+        function openLightbox(index) {
+            currentIndex = index;
+            updateLightbox();
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+            const video = lightboxContent.querySelector('video');
+            if (video) video.pause();
+        }
+
+        function updateLightbox() {
+            const media = mediaList[currentIndex];
+            lightboxContent.innerHTML = '';
+
+            if (media.type === 'image') {
+                const img = document.createElement('img');
+                img.src = media.src;
+                img.alt = media.name;
+                lightboxContent.appendChild(img);
+            } else {
+                const video = document.createElement('video');
+                video.src = media.src;
+                video.controls = true;
+                video.autoplay = true;
+                video.loop = true;
+                lightboxContent.appendChild(video);
+            }
+
+            lightboxInfo.textContent = `${currentIndex + 1} / ${mediaList.length} — ${media.name}`;
+        }
+
+        function navigate(dir) {
+            currentIndex = (currentIndex + dir + mediaList.length) % mediaList.length;
+            updateLightbox();
+        }
+
+        document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+        document.getElementById('lightbox-prev').addEventListener('click', () => navigate(-1));
+        document.getElementById('lightbox-next').addEventListener('click', () => navigate(1));
+        lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+        document.addEventListener('keydown', e => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            else if (e.key === 'ArrowLeft') navigate(-1);
+            else if (e.key === 'ArrowRight') navigate(1);
+        });
+
+        initGallery();
+    </script>
+</body>
+</html>
